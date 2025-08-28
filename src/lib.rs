@@ -5,6 +5,7 @@
 
 use core::{fmt::Debug, marker::PhantomData};
 use embedded_hal::digital::{OutputPin, PinState};
+use embedded_hal_async::delay::DelayNs;
 use embedded_storage::nor_flash::{ErrorType, NorFlashError, NorFlashErrorKind};
 
 mod commands_impl;
@@ -56,15 +57,16 @@ enum Command {
 }
 
 /// Low level driver for the w25 flash memory chip.
-pub struct W25<Series, SPI, HOLD, WP> {
+pub struct W25<Series, SPI, HOLD, WP, D: DelayNs> {
     spi: SPI,
     hold: HOLD,
     wp: WP,
     capacity: u32,
+    delay: D,
     _pantom: PhantomData<Series>,
 }
 
-impl<Series: NorSeries, SPI, HOLD, WP> W25<Series, SPI, HOLD, WP> {
+impl<Series: NorSeries, SPI, HOLD, WP, D: DelayNs> W25<Series, SPI, HOLD, WP, D> {
     /// Get the total capacity of the flash in bytes
     pub fn capacity(&self) -> u32 {
         self.capacity
@@ -83,24 +85,24 @@ impl<Series: NorSeries, SPI, HOLD, WP> W25<Series, SPI, HOLD, WP> {
     }
 }
 
-impl<Series: NorSeries, SPI, S: Debug, P: Debug, HOLD, WP>
-    W25<Series, SPI, HOLD, WP>
+impl<Series: NorSeries, SPI, S: Debug, P: Debug, HOLD, WP, D: DelayNs> W25<Series, SPI, HOLD, WP, D>
 where
     SPI: embedded_hal::spi::ErrorType<Error = S>,
     HOLD: OutputPin<Error = P>,
     WP: OutputPin<Error = P>,
 {
     /// Create a new instance of the flash.
-    /// 
+    ///
     /// The capacity must be the total chip capacity.
     /// Weird things can happen if you provide the wrong value.
     /// No checks are done, you're believed at your word.
-    pub fn new(spi: SPI, hold: HOLD, wp: WP, capacity: u32) -> Result<Self, Error<S, P>> {
+    pub fn new(spi: SPI, hold: HOLD, wp: WP, capacity: u32, delay: D) -> Result<Self, Error<S, P>> {
         let mut flash = W25 {
             spi,
             hold,
             wp,
             capacity,
+            delay,
             _pantom: PhantomData,
         };
 
@@ -133,8 +135,8 @@ where
     }
 }
 
-impl<Series: NorSeries, SPI, S: Debug, P: Debug, HOLD, WP> ErrorType
-    for W25<Series, SPI, HOLD, WP>
+impl<Series: NorSeries, SPI, S: Debug, P: Debug, HOLD, WP, D: DelayNs> ErrorType
+    for W25<Series, SPI, HOLD, WP, D>
 where
     SPI: embedded_hal::spi::ErrorType<Error = S>,
     HOLD: OutputPin<Error = P>,

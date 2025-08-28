@@ -4,8 +4,8 @@ use embedded_hal::digital::OutputPin;
 use embedded_hal_async::spi::{Operation, SpiDevice};
 use embedded_storage_async::nor_flash::{MultiwriteNorFlash, NorFlash, ReadNorFlash};
 
-impl<Series: NorSeries, SPI, S: Debug, P: Debug, HOLD, WP> ReadNorFlash
-    for W25<Series, SPI, HOLD, WP>
+impl<Series: NorSeries, SPI, S: Debug, P: Debug, HOLD, WP, D: DelayNs> ReadNorFlash
+    for W25<Series, SPI, HOLD, WP, D>
 where
     SPI: SpiDevice<Error = S>,
     HOLD: OutputPin<Error = P>,
@@ -24,7 +24,8 @@ where
     }
 }
 
-impl<Series: NorSeries, SPI, S: Debug, P: Debug, HOLD, WP> NorFlash for W25<Series, SPI, HOLD, WP>
+impl<Series: NorSeries, SPI, S: Debug, P: Debug, HOLD, WP, D: DelayNs> NorFlash
+    for W25<Series, SPI, HOLD, WP, D>
 where
     SPI: SpiDevice<Error = S>,
     HOLD: OutputPin<Error = P>,
@@ -45,8 +46,8 @@ where
     }
 }
 
-impl<Series: NorSeries, SPI, S: Debug, P: Debug, HOLD, WP> MultiwriteNorFlash
-    for W25<Series, SPI, HOLD, WP>
+impl<Series: NorSeries, SPI, S: Debug, P: Debug, HOLD, WP, D: DelayNs> MultiwriteNorFlash
+    for W25<Series, SPI, HOLD, WP, D>
 where
     SPI: SpiDevice<Error = S>,
     HOLD: OutputPin<Error = P>,
@@ -56,7 +57,7 @@ where
 {
 }
 
-impl<Series: NorSeries, SPI, S: Debug, P: Debug, HOLD, WP> W25<Series, SPI, HOLD, WP>
+impl<Series: NorSeries, SPI, S: Debug, P: Debug, HOLD, WP, D: DelayNs> W25<Series, SPI, HOLD, WP, D>
 where
     SPI: SpiDevice<Error = S>,
     HOLD: OutputPin<Error = P>,
@@ -261,7 +262,9 @@ where
             .await
             .map_err(Error::SpiError)?;
 
-        while self.busy().await? {}
+        while self.busy().await? {
+            self.delay.delay_ms(1).await;
+        }
 
         Ok(())
     }
@@ -284,7 +287,9 @@ where
             .await
             .map_err(Error::SpiError)?;
 
-        while self.busy().await? {}
+        while self.busy().await? {
+            self.delay.delay_ms(2).await;
+        }
 
         Ok(())
     }
@@ -307,7 +312,9 @@ where
             .await
             .map_err(Error::SpiError)?;
 
-        while self.busy().await? {}
+        while self.busy().await? {
+            self.delay.delay_ms(5).await;
+        }
 
         Ok(())
     }
@@ -322,7 +329,9 @@ where
             .await
             .map_err(Error::SpiError)?;
 
-        while self.busy().await? {}
+        while self.busy().await? {
+            self.delay.delay_ms(10).await;
+        }
 
         Ok(())
     }
